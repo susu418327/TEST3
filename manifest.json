@@ -5,7 +5,7 @@
   "display": "standalone", // 關鍵！隱藏瀏覽器地址欄，使其像原生 App
   "background_color": “#F0FFFF", // App 啟動時的背景顏色
   "theme_color": "#ffffff", // 瀏覽器頂部欄位顏色 (可以選一個可愛色系)
-  "description": "這是我的第一個 PWA 應用程式。",
+  "description": "這是我的第一個 PWA 應用程式。。",
   "icons": [
     {
       "src": "/images/icon-192x192.png",
