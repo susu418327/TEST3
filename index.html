@@ -998,6 +998,7 @@
                 showItineraryModal.value = true;
             };
 
+            // 修正後的 saveItineraryItem 函數
             const saveItineraryItem = async () => {
                 if (!newItinerary.value.name) {
                     alert('行程名稱不能為空');
@@ -1014,14 +1015,22 @@
                         // 更新
                         const docRef = doc(colRef, dataToSave.id);
                         await setDoc(docRef, dataToSave, { merge: true });
+                        
+                        // 【修正點：更新成功後，確保關閉模態框】
+                        showItineraryModal.value = false;
+                        isEditMode.value = false;
                     } else {
                         // 新增
                         await addDoc(colRef, { ...dataToSave, createdAt: Date.now() });
+                        
+                        // 【關鍵修正：新增成功後，必須關閉模態框並重設狀態】
+                        showItineraryModal.value = false; 
+                        isEditMode.value = false;
+                        resetItineraryForm(); // 新增後也重設表單，以免下次開啟時殘留數據
                     }
-                    showItineraryModal.value = false;
-                    isEditMode.value = false;
                 } catch (error) {
                     console.error("儲存行程失敗:", error);
+                    alert('儲存行程失敗，請檢查網路連線。');
                 }
             };
             
