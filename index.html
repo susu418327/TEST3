@@ -985,52 +985,68 @@
             };
 
             // --- 行程 CRUD ---
+            
+            // 修正 1: 確保所有數字和關鍵欄位初始化，以防驗證失敗
             const resetItineraryForm = () => {
                 isEditMode.value = false;
                 newItinerary.value = {
-                    id: null, name: '', category: 'sightseeing', startTime: '', hours: '', address: '', price: 0, note: '', transportType: 'public', travelTime: '', isNoteExpanded: false, fullDate: currentDateFullDate.value
+                    id: null, 
+                    name: '', 
+                    category: 'sightseeing', 
+                    startTime: '', 
+                    hours: '', 
+                    address: '', 
+                    price: 0, // 確保為數字類型
+                    note: '', 
+                    transportType: 'public', 
+                    travelTime: '', 
+                    isNoteExpanded: false, 
+                    fullDate: currentDateFullDate.value
                 };
             };
             
+            // 修正 2: 確保編輯時使用深層複製
             const editItem = (item) => {
                 isEditMode.value = true;
+                // 使用深層複製來確保編輯狀態獨立
                 newItinerary.value = JSON.parse(JSON.stringify(item)); 
                 showItineraryModal.value = true;
             };
 
-            // 修正後的 saveItineraryItem 函數
+            // 修正 3 (核心修正): 確保新增成功後會關閉模態框，並加強錯誤捕獲
             const saveItineraryItem = async () => {
                 if (!newItinerary.value.name) {
                     alert('行程名稱不能為空');
                     return;
                 }
                 
+                // 1. 取得需要儲存的數據副本
                 const dataToSave = { ...newItinerary.value };
                 delete dataToSave.isNoteExpanded; 
+                
                 const colRef = getCollectionRef('hokkaido_itineraries');
                 if (!colRef) return;
                 
                 try {
                     if (isEditMode.value && dataToSave.id) {
-                        // 更新
+                        // 編輯模式：更新
                         const docRef = doc(colRef, dataToSave.id);
                         await setDoc(docRef, dataToSave, { merge: true });
                         
-                        // 【修正點：更新成功後，確保關閉模態框】
-                        showItineraryModal.value = false;
-                        isEditMode.value = false;
                     } else {
-                        // 新增
+                        // 新增模式：新增
                         await addDoc(colRef, { ...dataToSave, createdAt: Date.now() });
-                        
-                        // 【關鍵修正：新增成功後，必須關閉模態框並重設狀態】
-                        showItineraryModal.value = false; 
-                        isEditMode.value = false;
-                        resetItineraryForm(); // 新增後也重設表單，以免下次開啟時殘留數據
                     }
+                    
+                    // 2. 成功後執行狀態清除（解決按鈕無反應的主要原因）
+                    showItineraryModal.value = false; 
+                    isEditMode.value = false;
+                    resetItineraryForm();
+                    
                 } catch (error) {
                     console.error("儲存行程失敗:", error);
-                    alert('儲存行程失敗，請檢查網路連線。');
+                    // 顯示更明確的錯誤提示
+                    alert(`儲存行程失敗！錯誤詳情：${error.message || '請檢查網路連線或 Firebase 配置。'}`);
                 }
             };
             
@@ -1068,8 +1084,9 @@
                     target.startTime = tempTime;
                     
                     // 異步更新 Firestore
-                    await saveItineraryItem({ ...item, id: item.id, isNoteExpanded: false });
-                    await saveItineraryItem({ ...target, id: target.id, isNoteExpanded: false });
+                    // 注意：這裡直接使用 item 和 target 的響應式數據，但調用 saveItineraryItem 時要手動處理它們的 isNoteExpanded 屬性
+                    await setDoc(doc(getCollectionRef('hokkaido_itineraries'), item.id), { ...item, isNoteExpanded: false }, { merge: true });
+                    await setDoc(doc(getCollectionRef('hokkaido_itineraries'), target.id), { ...target, isNoteExpanded: false }, { merge: true });
                 }
             };
 
