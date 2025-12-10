@@ -936,8 +936,9 @@
             // --- Firebase 數據操作方法 ---
             
             const getCollectionRef = (name) => {
+                // 修正 4: 確保只有當 db.value 和 userId.value 都存在時，才嘗試獲取集合。
                 if (!db.value || !userId.value) {
-                    console.error("Firebase DB or User ID not ready.");
+                    console.error("Firebase DB or User ID not ready. Operation stopped.");
                     return null;
                 }
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -1015,6 +1016,12 @@
 
             // 修正 3 (核心修正): 確保新增成功後會關閉模態框，並加強錯誤捕獲
             const saveItineraryItem = async () => {
+                if (!db.value) {
+                    alert('資料庫尚未連線。請稍候或檢查 Firebase 配置。');
+                    console.error("Database connection not established. Operation aborted.");
+                    return;
+                }
+                
                 if (!newItinerary.value.name) {
                     alert('行程名稱不能為空');
                     return;
@@ -1025,7 +1032,10 @@
                 delete dataToSave.isNoteExpanded; 
                 
                 const colRef = getCollectionRef('hokkaido_itineraries');
-                if (!colRef) return;
+                if (!colRef) {
+                     alert('無法建立資料庫連線或用戶 ID 錯誤。請檢查 Console 訊息。');
+                     return;
+                }
                 
                 try {
                     if (isEditMode.value && dataToSave.id) {
@@ -1045,8 +1055,8 @@
                     
                 } catch (error) {
                     console.error("儲存行程失敗:", error);
-                    // 顯示更明確的錯誤提示
-                    alert(`儲存行程失敗！錯誤詳情：${error.message || '請檢查網路連線或 Firebase 配置。'}`);
+                    // 顯示更明確的錯誤提示 (這一步最有可能報出權限錯誤)
+                    alert(`儲存行程失敗！\n請檢查 Console 了解詳情，最常見原因為：\n1. Firebase 規則權限不足。\n2. 網路錯誤。`);
                 }
             };
             
@@ -1264,11 +1274,15 @@
                     } finally {
                          // 無論成功失敗，都解除 loading 鎖定
                          loading.value = false;
+                         // 修正 5: 確保在 App 載入後，新行程的表單狀態是正確的
+                         resetItineraryForm(); 
                     }
                 } else {
                     // === 修正點：如果沒有 Firebase 配置，立即解除 loading 鎖定 ===
                     console.error("Firebase 配置未定義。App 將在沒有後端的情況下運行。");
-                    loading.value = false; // <-- 關鍵修正
+                    loading.value = false; 
+                    // 修正 5: 確保在 App 載入後，新行程的表單狀態是正確的
+                    resetItineraryForm(); 
                 }
                 
                 // 初始計算貨幣
