@@ -1236,11 +1236,13 @@
                     } catch (error) {
                         console.error("初始化 Firebase 失敗:", error);
                     } finally {
+                         // 無論成功失敗，都解除 loading 鎖定
                          loading.value = false;
                     }
                 } else {
-                    console.error("Firebase 配置未定義。無法初始化 App。");
-                    loading.value = false;
+                    // === 修正點：如果沒有 Firebase 配置，立即解除 loading 鎖定 ===
+                    console.error("Firebase 配置未定義。App 將在沒有後端的情況下運行。");
+                    loading.value = false; // <-- 關鍵修正
                 }
                 
                 // 初始計算貨幣
